@@ -5,6 +5,7 @@ interface AxiosOptions {
 	injectToken?: boolean
 	localTokenKey?: string
 	authorization?: string
+	contentType?: string
 	cancelMultipleRequest?: boolean
 	requestInterceptor?: (request: AxiosRequestConfig<any>) => any
 	responseInterceptor?: (respone: AxiosResponse<any, any>) => any
@@ -21,7 +22,7 @@ interface pendingRequest {
 	canceler: (message?: string) => void
 }
 
-class Request {
+export default class Request {
 	private instance: AxiosInstance
 
 	private axiosService: AxiosService
@@ -30,6 +31,7 @@ class Request {
 		injectToken: false,
 		localTokenKey: 'token',
 		authorization: 'authorization',
+		contentType: 'Content-Type',
 		cancelMultipleRequest: true
 	}
 
@@ -38,9 +40,9 @@ class Request {
 	private matchConfigKeys: ['url', 'data', 'params', 'method'] = ['url', 'data', 'params', 'method']
 
 	constructor(axiosService: AxiosService) {
-		this.loadOptions()
-
 		this.axiosService = axiosService
+
+		this.loadOptions()
 
 		this.instance = axios.create(this.axiosService.config)
 
@@ -73,7 +75,7 @@ class Request {
 		)
 	}
 
-	public request(config: AxiosRequestConfig) {
+	public request<T = any>(config: AxiosRequestConfig): Promise<T> {
 		const pendingRequest = this.pendingPool.find(item => {
 			return this.matchConfigKeys.every(key => item.config[key] === config[key])
 		})
@@ -96,7 +98,9 @@ class Request {
 		return request
 	}
 
-	useCancelRequest(config: AxiosRequestConfig): [Promise<any>, (message?: string) => void] {
+	public useCancelRequest<T = any>(
+		config: AxiosRequestConfig
+	): [Promise<T>, (message?: string) => void] {
 		const request = this.request(config)
 		const req = this.pendingPool.find(v => v.config === config)
 		return [request, req!.canceler]
@@ -104,8 +108,8 @@ class Request {
 
 	private loadOptions() {
 		let key: keyof AxiosOptions
-		for (key in this.options) {
-			if (this.axiosService?.options && this.axiosService.options[key]) {
+		if (this.axiosService.options) {
+			for (key in this.axiosService.options) {
 				//@ts-ignore
 				this.options[key] = this.axiosService.options[key]
 			}
@@ -143,7 +147,7 @@ class Request {
 	format(request: AxiosRequestConfig) {
 		if (
 			request.headers &&
-			request.headers['Content-Type'] === 'application/x-www-form-urlencoded'
+			request.headers[this.options.contentType!] === 'application/x-www-form-urlencoded'
 		) {
 			if (request.transformRequest && Array.isArray(request.transformRequest)) {
 				request.transformRequest.push(data => {
@@ -172,33 +176,3 @@ class Request {
 		}, new FormData())
 	}
 }
-
-const request = new Request({
-	config: {
-		baseURL: 'http://127.0.0.1:4000/api',
-		timeout: 2000
-	}
-})
-
-request
-	.request({
-		url: '/test1'
-	})
-	.then(res => {
-		console.log(res)
-	})
-	.catch(err => {
-		console.log(err)
-	})
-
-const [req, ca] = request.useCancelRequest({ url: '/test' })
-
-req
-	.then(res => {
-		console.log(res)
-	})
-	.catch(err => {
-		console.log(err)
-	})
-
-request.clearPendingPool()

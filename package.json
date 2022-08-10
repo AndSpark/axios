@@ -1,15 +1,16 @@
 {
-  "name": "axios-class",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "axios": "^0.26.0"
-  }
+	"name": "@andspark/axios",
+	"version": "1.0.1",
+	"description": "",
+	"main": "dist/index.js",
+	"scripts": {
+		"build": "tsc src/index.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"axios": "^0.26.0",
+		"typescript": "^4.6.3"
+	}
 }
